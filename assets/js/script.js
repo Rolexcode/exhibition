@@ -48,6 +48,20 @@ $(document).ready(function () {
   });
 });
 
+
+
+let undrawList = [];
+
+fetch('../../undraw.json')
+  .then(res => res.json())
+  .then(data => {
+    undrawList = data;
+  })
+  .catch(err => console.error("Failed to load undraw.json", err));
+
+
+
+
 async function performSearch() {
   const assetType = document.getElementById("assetType").value;
   const queryInput = document.getElementById("searchInput");
@@ -62,65 +76,159 @@ async function performSearch() {
   }
 
   if (assetType === "icon") {
-    const url = `https://api.iconify.design/search?query=${query}`;
-
-    try {
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (!data.icons || data.icons.length === 0) {
-        resultArea.innerHTML = `<p class="white fs-s3">No icons found for "${query}".</p>`;
-        return;
-      }
-
-      const grid = document.createElement("div");
-      grid.className = "grid gap-6 mt-6";
-      grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(100px, 1fr))";
-
-      const icons = data.icons.slice(0, 30);
-
-      for (const icon of icons) {
-        const iconUrl = `https://api.iconify.design/${icon}.svg`;
-
-        const wrapper = document.createElement("div");
-        wrapper.className =
-          "flex flex-col items-center justify-center p-3 bg-[#1e1e1e] br-6";
-
-        const img = document.createElement("img");
-        img.src = iconUrl;
-        img.alt = icon;
-        img.width = 40;
-        img.className = "mb-2";
-img.style.backgroundColor = "#374151"; // soft light-gray (Tailwind gray-100)
-img.style.padding = "6px";
-img.style.borderRadius = "8px";
-
-
-        const downloadBtn = document.createElement("button");
-        downloadBtn.className = "p-1 bg-transparent border-none";
-        downloadBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-download" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="#60a5fa" fill="none" stroke-linecap="round" stroke-linejoin="round">
-  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-  <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
-  <path d="M7 11l5 5l5 -5" />
-  <path d="M12 4v12" />
-</svg>`;
-
-        downloadBtn.onclick = () => downloadSVG(iconUrl, icon);
-
-        wrapper.appendChild(img);
-        wrapper.appendChild(downloadBtn);
-        grid.appendChild(wrapper);
-      }
-
-      resultArea.appendChild(grid);
-      queryInput.value = "";
-    } catch (err) {
-      resultArea.innerHTML = `<p class="white fs-s3">Error loading icons.</p>`;
-      console.error(err);
-    }
+    await searchIcons(query, resultArea);
+  } else if (assetType === "svg") {
+    await searchUnDrawSVG(query, resultArea);
+  } else if (assetType === "photo") {
+    await searchImages(query, resultArea);
   }
 }
 
+
+// 1. ICONIFY ICON SEARCH
+async function searchIcons(query, resultArea) {
+  const url = `https://api.iconify.design/search?query=${query}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.icons || data.icons.length === 0) {
+      resultArea.innerHTML = `<p class="white fs-s3">No icons found for "${query}".</p>`;
+      return;
+    }
+
+    const grid = createGrid();
+
+    const icons = data.icons.slice(0, 30);
+    for (const icon of icons) {
+      const iconUrl = `https://api.iconify.design/${icon}.svg`;
+
+      const wrapper = createAssetWrapper();
+
+      const img = document.createElement("img");
+      img.src = iconUrl;
+      img.alt = icon;
+      img.width = 40;
+      img.className = "mb-2";
+      img.style.backgroundColor = "#374151";
+      img.style.padding = "6px";
+      img.style.borderRadius = "8px";
+
+      const downloadBtn = createDownloadButton(() => downloadSVG(iconUrl, icon));
+
+      wrapper.appendChild(img);
+      wrapper.appendChild(downloadBtn);
+      grid.appendChild(wrapper);
+    }
+
+    resultArea.appendChild(grid);
+    document.getElementById("searchInput").value = "";
+  } catch (err) {
+    resultArea.innerHTML = `<p class="white fs-s3">Error loading icons.</p>`;
+    console.error(err);
+  }
+}
+
+//svg
+async function searchUnDrawSVG(query, resultArea) {
+  try {
+    const match = undrawList.find(name =>
+      name.toLowerCase().includes(query.toLowerCase())
+    );
+
+    if (!match) {
+      throw new Error("SVG not found");
+    }
+
+    const svgUrl = `https://raw.githubusercontent.com/undraw/undraw/master/static/illustrations/${match}.svg`;
+    const res = await fetch(svgUrl);
+    if (!res.ok) throw new Error("SVG fetch failed");
+
+    const blob = await res.blob();
+    const objectURL = URL.createObjectURL(blob);
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "br-8 p-5 m-5 bg-indigo-lightest-10";
+
+    const img = document.createElement("img");
+    img.src = objectURL;
+    img.alt = match;
+    img.width = 150;
+
+    const downloadBtn = document.createElement("button");
+    downloadBtn.textContent = "Download";
+    downloadBtn.onclick = () => downloadSVG(svgUrl, match);
+    downloadBtn.className = "button-lg bg-indigo indigo-lightest fw-300 fs-s3 br-8 mt-2";
+
+    wrapper.appendChild(img);
+    wrapper.appendChild(downloadBtn);
+    resultArea.appendChild(wrapper);
+  } catch (err) {
+    console.error("Fetch failed:", err);
+    resultArea.innerHTML = `<p class="white fs-s3">No SVG illustration found for "${query}".</p>`;
+  }
+}
+
+
+function downloadSVG(url, filename) {
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${filename}.svg`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+
+
+
+// 3. UNSPLASH IMAGE SEARCH
+const UNSPLASH_ACCESS_KEY = "e4thUoQWrH9Q9hJWXdqVITQO5WDZOhFuxyDG9lTAGXQ";
+
+async function searchImages(query, resultArea) {
+  const url = `https://api.unsplash.com/search/photos?query=${query}&per_page=9&client_id=${UNSPLASH_ACCESS_KEY}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.results || data.results.length === 0) {
+      resultArea.innerHTML = `<p class="white fs-s3">No images found for "${query}".</p>`;
+      return;
+    }
+
+    const grid = createGrid("150px");
+
+    for (const item of data.results) {
+      const wrapper = createAssetWrapper();
+
+      const img = document.createElement("img");
+      img.src = item.urls.small;
+      img.alt = item.alt_description || query;
+      img.width = 150;
+      img.className = "mb-2 br-3";
+
+      const downloadBtn = document.createElement("a");
+      downloadBtn.href = item.links.download + "?force=true";
+      downloadBtn.download = "";
+      downloadBtn.target = "_blank";
+      downloadBtn.className = "p-1 bg-transparent border-none";
+      downloadBtn.innerHTML = downloadIconSVG();
+
+      wrapper.appendChild(img);
+      wrapper.appendChild(downloadBtn);
+      grid.appendChild(wrapper);
+    }
+
+    resultArea.appendChild(grid);
+  } catch (err) {
+    resultArea.innerHTML = `<p class="white fs-s3">Error loading images.</p>`;
+    console.error(err);
+  }
+}
+
+// UTILITIES
 function downloadSVG(url, name) {
   fetch(url)
     .then((res) => res.blob())
@@ -133,4 +241,36 @@ function downloadSVG(url, name) {
       document.body.removeChild(link);
     })
     .catch((err) => console.error("Download error:", err));
+}
+
+function createGrid(minWidth = "100px") {
+  const grid = document.createElement("div");
+  grid.className = "grid gap-6 mt-6";
+  grid.style.gridTemplateColumns = `repeat(auto-fill, minmax(${minWidth}, 1fr))`;
+  return grid;
+}
+
+function createAssetWrapper() {
+  const wrapper = document.createElement("div");
+  wrapper.className = "flex flex-col items-center justify-center p-3 bg-[#1e1e1e] br-6";
+  return wrapper;
+}
+
+function createDownloadButton(onClick) {
+  const btn = document.createElement("button");
+  btn.className = "p-1 bg-transparent border-none";
+  btn.innerHTML = downloadIconSVG();
+  btn.onclick = onClick;
+  return btn;
+}
+
+function downloadIconSVG() {
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-download" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="#60a5fa" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+      <path d="M7 11l5 5l5 -5" />
+      <path d="M12 4v12" />
+    </svg>
+  `;
 }
