@@ -48,14 +48,7 @@ $(document).ready(function () {
   });
 });
 
-let undrawList = [];
 
-fetch("../../undraw.json")
-  .then((res) => res.json())
-  .then((data) => {
-    undrawList = data;
-  })
-  .catch((err) => console.error("Failed to load undraw.json", err));
 
 async function performSearch() {
   const assetType = document.getElementById("assetType").value;
@@ -73,11 +66,12 @@ async function performSearch() {
   if (assetType === "icon") {
     await searchIcons(query, resultArea);
   } else if (assetType === "svg") {
-    await searchUnDrawSVG(query, resultArea);
+    await searchSVGs(query, resultArea); // ✅ Use new SVG function here
   } else if (assetType === "photo") {
     await searchImages(query, resultArea);
   }
 }
+
 
 // 1. ICONIFY ICON SEARCH
 async function searchIcons(query, resultArea) {
@@ -126,55 +120,99 @@ async function searchIcons(query, resultArea) {
   }
 }
 
-//svg
-async function searchUnDrawSVG(query, resultArea) {
-  try {
-    const match = undrawList.find((name) =>
-      name.toLowerCase().includes(query.toLowerCase())
-    );
 
-    if (!match) {
-      throw new Error("SVG not found");
+// svg
+async function searchSVGs(query) {
+  const resultArea = document.getElementById("resultArea");
+  resultArea.innerHTML = ""; // Clear previous results
+
+  const sources = [
+    {
+      name: "SVGRepo",
+      search: async (q) => {
+        const res = await fetch(`https://www.svgrepo.com/api/v1/search?q=${q}&limit=6`);
+        const data = await res.json();
+        return data.map(item => ({
+          title: item.title,
+          url: item.url, // direct SVG link
+        }));
+      },
+    },
+    {
+      name: "Lordicon",
+      search: async (q) => {
+        // NOTE: Lordicon requires a bit of filtering; here’s a basic fallback
+        const keywords = ["time", "work", "search", "code"];
+        if (!keywords.includes(q.toLowerCase())) return [];
+        return [
+          {
+            title: `${q} icon`,
+            url: `https://cdn.lordicon.com/${q === "time" ? "tdrtiskw" : q === "work" ? "xirobkhn" : "tdrtiskw"}.svg`,
+          },
+        ];
+      },
+    },
+    {
+      name: "Humaaans/Artify",
+      search: async (q) => {
+        // Note: static CDN example
+        if (!["team", "work", "laptop"].includes(q.toLowerCase())) return [];
+        return [
+          {
+            title: `${q} humaaans`,
+            url: `https://artify.co/humaaans/humaaans-${q.toLowerCase()}.svg`,
+          },
+        ];
+      },
+    },
+  ];
+
+  for (const source of sources) {
+    try {
+      const results = await source.search(query);
+      results.forEach(({ title, url }) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "br-8 p-5 m-5 bg-indigo-lightest-10";
+
+        const titleTag = document.createElement("div");
+        titleTag.className = "fw-500 white mb-3";
+        titleTag.textContent = `${source.name}: ${title}`;
+
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = title;
+        img.width = 150;
+
+        const btn = document.createElement("button");
+        btn.className = "button-lg bg-indigo indigo-lightest fw-300 fs-s3 br-8 mt-2";
+        btn.textContent = "Download";
+        btn.onclick = () => {
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${title}.svg`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        };
+
+        wrapper.appendChild(titleTag);
+        wrapper.appendChild(img);
+        wrapper.appendChild(btn);
+        resultArea.appendChild(wrapper);
+      });
+    } catch (err) {
+      console.warn(`Failed to fetch from ${source.name}:`, err);
     }
+  }
 
-    const svgUrl = `https://raw.githubusercontent.com/undraw/undraw/master/static/illustrations/${match}.svg`;
-    const res = await fetch(svgUrl);
-    if (!res.ok) throw new Error("SVG fetch failed");
-
-    const blob = await res.blob();
-    const objectURL = URL.createObjectURL(blob);
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "br-8 p-5 m-5 bg-indigo-lightest-10";
-
-    const img = document.createElement("img");
-    img.src = objectURL;
-    img.alt = match;
-    img.width = 150;
-
-    const downloadBtn = document.createElement("button");
-    downloadBtn.textContent = "Download";
-    downloadBtn.onclick = () => downloadSVG(svgUrl, match);
-    downloadBtn.className =
-      "button-lg bg-indigo indigo-lightest fw-300 fs-s3 br-8 mt-2";
-
-    wrapper.appendChild(img);
-    wrapper.appendChild(downloadBtn);
-    resultArea.appendChild(wrapper);
-  } catch (err) {
-    console.error("Fetch failed:", err);
-    resultArea.innerHTML = `<p class="white fs-s3">No SVG illustration found for "${query}".</p>`;
+  // Show message if all fail
+  if (!resultArea.hasChildNodes()) {
+    resultArea.innerHTML = `<p class="white fs-s3">No SVGs found for "${query}"</p>`;
   }
 }
 
-function downloadSVG(url, filename) {
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${filename}.svg`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
+
+
 
 // 3. UNSPLASH IMAGE SEARCH
 const UNSPLASH_ACCESS_KEY = "e4thUoQWrH9Q9hJWXdqVITQO5WDZOhFuxyDG9lTAGXQ";
