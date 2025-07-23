@@ -48,19 +48,14 @@ $(document).ready(function () {
   });
 });
 
-
-
 let undrawList = [];
 
-fetch('../../undraw.json')
-  .then(res => res.json())
-  .then(data => {
+fetch("../../undraw.json")
+  .then((res) => res.json())
+  .then((data) => {
     undrawList = data;
   })
-  .catch(err => console.error("Failed to load undraw.json", err));
-
-
-
+  .catch((err) => console.error("Failed to load undraw.json", err));
 
 async function performSearch() {
   const assetType = document.getElementById("assetType").value;
@@ -83,7 +78,6 @@ async function performSearch() {
     await searchImages(query, resultArea);
   }
 }
-
 
 // 1. ICONIFY ICON SEARCH
 async function searchIcons(query, resultArea) {
@@ -115,7 +109,9 @@ async function searchIcons(query, resultArea) {
       img.style.padding = "6px";
       img.style.borderRadius = "8px";
 
-      const downloadBtn = createDownloadButton(() => downloadSVG(iconUrl, icon));
+      const downloadBtn = createDownloadButton(() =>
+        downloadSVG(iconUrl, icon)
+      );
 
       wrapper.appendChild(img);
       wrapper.appendChild(downloadBtn);
@@ -133,7 +129,7 @@ async function searchIcons(query, resultArea) {
 //svg
 async function searchUnDrawSVG(query, resultArea) {
   try {
-    const match = undrawList.find(name =>
+    const match = undrawList.find((name) =>
       name.toLowerCase().includes(query.toLowerCase())
     );
 
@@ -159,7 +155,8 @@ async function searchUnDrawSVG(query, resultArea) {
     const downloadBtn = document.createElement("button");
     downloadBtn.textContent = "Download";
     downloadBtn.onclick = () => downloadSVG(svgUrl, match);
-    downloadBtn.className = "button-lg bg-indigo indigo-lightest fw-300 fs-s3 br-8 mt-2";
+    downloadBtn.className =
+      "button-lg bg-indigo indigo-lightest fw-300 fs-s3 br-8 mt-2";
 
     wrapper.appendChild(img);
     wrapper.appendChild(downloadBtn);
@@ -170,7 +167,6 @@ async function searchUnDrawSVG(query, resultArea) {
   }
 }
 
-
 function downloadSVG(url, filename) {
   const a = document.createElement("a");
   a.href = url;
@@ -179,9 +175,6 @@ function downloadSVG(url, filename) {
   a.click();
   document.body.removeChild(a);
 }
-
-
-
 
 // 3. UNSPLASH IMAGE SEARCH
 const UNSPLASH_ACCESS_KEY = "e4thUoQWrH9Q9hJWXdqVITQO5WDZOhFuxyDG9lTAGXQ";
@@ -209,12 +202,22 @@ async function searchImages(query, resultArea) {
       img.width = 150;
       img.className = "mb-2 br-3";
 
-      const downloadBtn = document.createElement("a");
-      downloadBtn.href = item.links.download + "?force=true";
-      downloadBtn.download = "";
-      downloadBtn.target = "_blank";
+      const downloadBtn = document.createElement("button");
       downloadBtn.className = "p-1 bg-transparent border-none";
       downloadBtn.innerHTML = downloadIconSVG();
+      downloadBtn.onclick = async () => {
+        try {
+          const imgBlob = await fetch(item.urls.full).then((res) => res.blob());
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(imgBlob);
+          link.download = `${query || "unsplash-image"}.jpg`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } catch (err) {
+          console.error("Image download failed:", err);
+        }
+      };
 
       wrapper.appendChild(img);
       wrapper.appendChild(downloadBtn);
@@ -252,7 +255,8 @@ function createGrid(minWidth = "100px") {
 
 function createAssetWrapper() {
   const wrapper = document.createElement("div");
-  wrapper.className = "flex flex-col items-center justify-center p-3 bg-[#1e1e1e] br-6";
+  wrapper.className =
+    "flex flex-col items-center justify-center p-3 bg-[#1e1e1e] br-6";
   return wrapper;
 }
 
