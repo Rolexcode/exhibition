@@ -50,6 +50,10 @@ $(document).ready(function () {
 
 
 
+
+
+const PEXELS_API_KEY = "Tg7h6H6MGULaRTJqIPihDNiZfiCRVdsNk3lUqM5EZqewsXReAAAfVfl7"; // <-- Replace this!
+
 async function performSearch() {
   const assetType = document.getElementById("assetType").value;
   const queryInput = document.getElementById("searchInput");
@@ -58,36 +62,41 @@ async function performSearch() {
 
   resultArea.innerHTML = "";
 
-  if (!query) {
-    alert("Please enter a search term!");
-    return;
-  }
+  if (!query) return showToast("Please enter a search term!");
 
-  if (assetType === "icon") {
-    await searchIcons(query, resultArea);
-  } else if (assetType === "svg") {
-    await searchSVGs(query, resultArea); // ✅ Use new SVG function here
-  } else if (assetType === "photo") {
-    await searchImages(query, resultArea);
+  switch (assetType) {
+    case "icon":
+      await searchIcons(query, resultArea);
+      break;
+    case "photo":
+      await searchImages(query, resultArea);
+      break;
+    case "video":
+      await searchVideos(query, resultArea);
+      break;
+    case "svg":
+      showToast("SVG search is coming soon...");
+      break;
+    default:
+      showToast("Unsupported asset type selected.");
   }
 }
 
 
-// 1. ICONIFY ICON SEARCH
+// ICON SEARCH (Iconify)
 async function searchIcons(query, resultArea) {
+  const queryInput = document.getElementById("searchInput");
   const url = `https://api.iconify.design/search?query=${query}`;
-
   try {
     const response = await fetch(url);
     const data = await response.json();
 
-    if (!data.icons || data.icons.length === 0) {
+    if (!data.icons?.length) {
       resultArea.innerHTML = `<p class="white fs-s3">No icons found for "${query}".</p>`;
       return;
     }
 
     const grid = createGrid();
-
     const icons = data.icons.slice(0, 30);
     for (const icon of icons) {
       const iconUrl = `https://api.iconify.design/${icon}.svg`;
@@ -103,9 +112,7 @@ async function searchIcons(query, resultArea) {
       img.style.padding = "6px";
       img.style.borderRadius = "8px";
 
-      const downloadBtn = createDownloadButton(() =>
-        downloadSVG(iconUrl, icon)
-      );
+      const downloadBtn = createDownloadButton(() => downloadSVG(iconUrl, icon));
 
       wrapper.appendChild(img);
       wrapper.appendChild(downloadBtn);
@@ -113,108 +120,15 @@ async function searchIcons(query, resultArea) {
     }
 
     resultArea.appendChild(grid);
-    document.getElementById("searchInput").value = "";
+    queryInput.value = "";
   } catch (err) {
     resultArea.innerHTML = `<p class="white fs-s3">Error loading icons.</p>`;
     console.error(err);
+    showToast("Error loading icons.");
   }
 }
 
-
-// svg
-async function searchSVGs(query) {
-  const resultArea = document.getElementById("resultArea");
-  resultArea.innerHTML = ""; // Clear previous results
-
-  const sources = [
-    {
-      name: "SVGRepo",
-      search: async (q) => {
-        const res = await fetch(`https://www.svgrepo.com/api/v1/search?q=${q}&limit=6`);
-        const data = await res.json();
-        return data.map(item => ({
-          title: item.title,
-          url: item.url, // direct SVG link
-        }));
-      },
-    },
-    {
-      name: "Lordicon",
-      search: async (q) => {
-        // NOTE: Lordicon requires a bit of filtering; here’s a basic fallback
-        const keywords = ["time", "work", "search", "code"];
-        if (!keywords.includes(q.toLowerCase())) return [];
-        return [
-          {
-            title: `${q} icon`,
-            url: `https://cdn.lordicon.com/${q === "time" ? "tdrtiskw" : q === "work" ? "xirobkhn" : "tdrtiskw"}.svg`,
-          },
-        ];
-      },
-    },
-    {
-      name: "Humaaans/Artify",
-      search: async (q) => {
-        // Note: static CDN example
-        if (!["team", "work", "laptop"].includes(q.toLowerCase())) return [];
-        return [
-          {
-            title: `${q} humaaans`,
-            url: `https://artify.co/humaaans/humaaans-${q.toLowerCase()}.svg`,
-          },
-        ];
-      },
-    },
-  ];
-
-  for (const source of sources) {
-    try {
-      const results = await source.search(query);
-      results.forEach(({ title, url }) => {
-        const wrapper = document.createElement("div");
-        wrapper.className = "br-8 p-5 m-5 bg-indigo-lightest-10";
-
-        const titleTag = document.createElement("div");
-        titleTag.className = "fw-500 white mb-3";
-        titleTag.textContent = `${source.name}: ${title}`;
-
-        const img = document.createElement("img");
-        img.src = url;
-        img.alt = title;
-        img.width = 150;
-
-        const btn = document.createElement("button");
-        btn.className = "button-lg bg-indigo indigo-lightest fw-300 fs-s3 br-8 mt-2";
-        btn.textContent = "Download";
-        btn.onclick = () => {
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `${title}.svg`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        };
-
-        wrapper.appendChild(titleTag);
-        wrapper.appendChild(img);
-        wrapper.appendChild(btn);
-        resultArea.appendChild(wrapper);
-      });
-    } catch (err) {
-      console.warn(`Failed to fetch from ${source.name}:`, err);
-    }
-  }
-
-  // Show message if all fail
-  if (!resultArea.hasChildNodes()) {
-    resultArea.innerHTML = `<p class="white fs-s3">No SVGs found for "${query}"</p>`;
-  }
-}
-
-
-
-
-// 3. UNSPLASH IMAGE SEARCH
+// PHOTO SEARCH (Unsplash)
 const UNSPLASH_ACCESS_KEY = "e4thUoQWrH9Q9hJWXdqVITQO5WDZOhFuxyDG9lTAGXQ";
 
 async function searchImages(query, resultArea) {
@@ -224,7 +138,7 @@ async function searchImages(query, resultArea) {
     const response = await fetch(url);
     const data = await response.json();
 
-    if (!data.results || data.results.length === 0) {
+    if (!data.results?.length) {
       resultArea.innerHTML = `<p class="white fs-s3">No images found for "${query}".</p>`;
       return;
     }
@@ -240,22 +154,20 @@ async function searchImages(query, resultArea) {
       img.width = 150;
       img.className = "mb-2 br-3";
 
-      const downloadBtn = document.createElement("button");
-      downloadBtn.className = "p-1 bg-transparent border-none";
-      downloadBtn.innerHTML = downloadIconSVG();
-      downloadBtn.onclick = async () => {
+      const downloadBtn = createDownloadButton(async () => {
         try {
-          const imgBlob = await fetch(item.urls.full).then((res) => res.blob());
+          const blob = await fetch(item.urls.full).then(res => res.blob());
           const link = document.createElement("a");
-          link.href = URL.createObjectURL(imgBlob);
+          link.href = URL.createObjectURL(blob);
           link.download = `${query || "unsplash-image"}.jpg`;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
         } catch (err) {
           console.error("Image download failed:", err);
+          showToast("Image download failed.");
         }
-      };
+      });
 
       wrapper.appendChild(img);
       wrapper.appendChild(downloadBtn);
@@ -264,26 +176,62 @@ async function searchImages(query, resultArea) {
 
     resultArea.appendChild(grid);
   } catch (err) {
-    resultArea.innerHTML = `<p class="white fs-s3">Error loading images.</p>`;
-    console.error(err);
+    console.error("Error loading images:", err);
+    showToast("Error loading images.");
+  }
+}
+
+// NEW: VIDEO SEARCH (Pexels)
+async function searchVideos(query, resultArea) {
+  const url = `https://api.pexels.com/videos/search?query=${query}&per_page=6`;
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Authorization: PEXELS_API_KEY,
+      },
+    });
+
+    const data = await res.json();
+
+    if (!data.videos?.length) {
+      resultArea.innerHTML = `<p class="white fs-s3">No videos found for "${query}".</p>`;
+      return;
+    }
+
+    const grid = createGrid("300px");
+
+    data.videos.forEach((video) => {
+      const wrapper = createAssetWrapper();
+
+      const vid = document.createElement("video");
+      vid.src = video.video_files.find((v) => v.quality === "sd").link;
+      vid.controls = true;
+      vid.width = 300;
+      vid.className = "mb-2";
+
+      const downloadBtn = createDownloadButton(() => {
+        const link = document.createElement("a");
+        link.href = vid.src;
+        link.download = `${query}-video.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+
+      wrapper.appendChild(vid);
+      wrapper.appendChild(downloadBtn);
+      grid.appendChild(wrapper);
+    });
+
+    resultArea.appendChild(grid);
+  } catch (err) {
+    console.error("Video fetch failed:", err);
+    showToast("Failed to load videos.");
   }
 }
 
 // UTILITIES
-function downloadSVG(url, name) {
-  fetch(url)
-    .then((res) => res.blob())
-    .then((blob) => {
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `${name}.svg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    })
-    .catch((err) => console.error("Download error:", err));
-}
-
 function createGrid(minWidth = "100px") {
   const grid = document.createElement("div");
   grid.className = "grid gap-6 mt-6";
@@ -293,8 +241,7 @@ function createGrid(minWidth = "100px") {
 
 function createAssetWrapper() {
   const wrapper = document.createElement("div");
-  wrapper.className =
-    "flex flex-col items-center justify-center p-3 bg-[#1e1e1e] br-6";
+  wrapper.className = "flex flex-col items-center justify-center p-3 bg-[#1e1e1e] br-6";
   return wrapper;
 }
 
@@ -306,6 +253,23 @@ function createDownloadButton(onClick) {
   return btn;
 }
 
+function downloadSVG(url, name) {
+  fetch(url)
+    .then((res) => res.blob())
+    .then((blob) => {
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${name}.svg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    })
+    .catch((err) => {
+      console.error("Download error:", err);
+      showToast("SVG download failed.");
+    });
+}
+
 function downloadIconSVG() {
   return `
     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-download" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="#60a5fa" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -315,4 +279,24 @@ function downloadIconSVG() {
       <path d="M12 4v12" />
     </svg>
   `;
+}
+
+// Toast Message
+function showToast(message) {
+  const toast = document.createElement("div");
+  toast.textContent = message;
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #111;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 6px;
+    z-index: 1000;
+    box-shadow: 0 0 10px #0005;
+    font-size: 14px;
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => document.body.removeChild(toast), 3000);
 }

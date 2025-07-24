@@ -86,11 +86,14 @@
                 <div class="br-8 mt-10 inline-flex flex-wrap items-center gap-2">
                     <!-- Select box -->
                     <select id="assetType"
-                        class="input-lg fw-200 bg-indigo-lightest-10 white ph-indigo-lightest opacity-80 fs-s3 py-5 br-8 focus:outline-none">
+                        class="input-lg fw-200 bg-indigo-lightest-10 white ph-indigo-lightest opacity-80 fs-s3 py-5 px-4 min-w-[150px] br-8 focus:outline-none">
                         <option value="icon">Icons</option>
-                        <option value="svg">SVGs</option>
                         <option value="photo">Photos</option>
+                        <option value="video">Videos</option>
+                        <option value="svg" >SVGs (coming soon...)</option>
                     </select>
+
+
 
                     <!-- Input box -->
                     <input type="text" id="searchInput"
@@ -107,6 +110,7 @@
             </div>
         </div>
     </section>
+
 
     <!-- product options - single column result -->
     <section class="py-l10">
@@ -129,34 +133,51 @@
 
 
 
-    <!-- pricing -->
-    <section id="pricing">
-        <div class="p-10 flex flex-wrap">
-            <div class="w-100pc md-w-50pc">
-                <div class="p-5">
-                    <h4 class="white fw-800 fs-l3 mb-5">What HOOK Does</h4>
-                    <div class="indigo-lightest fw-600 fs-m1 opacity-50">A one-stop hub for designers, students, and
-                        creators to search, preview, and download high-quality icons, illustrations, and images — fast
-                        and free.</div>
-                </div>
-            </div>
-
-        </div>
-    </section>
-
-    <!-- featured blog -->
-    <section class="p-10 md-p-l10">
-        <div class="md-w-75pc">
-            <h2 class="white fs-l3 fw-900 lh-1">Lorem ipsum dolor sit amet, consectetur</h2>
-            <p class="indigo-lightest fw-600 fs-m1 opacity-50 my-5">Find the perfect icons, photos, and SVGs for your next project in seconds. </p>
-        </div>
-        <div class="relative w-100pc h-75vh bg-cover bg-b"
-            style="background-image: url(assets/images/hook.jpg);">
-            <a href="#"
-                class="bg-white black px-5 py-3 absolute right-0 bottom-0 hover-bg-black hover-white ease-500 flex justify-center items-center after-arrow-right no-underline fs-m1"></a>
+<!-- problem & solution section -->
+<section id="why-hook">
+    <div class="p-10 flex flex-wrap items-center justify-center gap-5">
+        <!-- Problem Side -->
+        <div class="w-100pc md-w-50pc p-5">
+            <h4 class="white fw-800 fs-l3 mb-5">The Problem</h4>
+            <p class="indigo-lightest fw-600 fs-m1 opacity-50">
+                Finding quality design assets is frustrating.
+                You're forced to visit multiple websites, deal with clunky search bars, limited downloads,
+                or licenses that restrict use for projects.
+                It’s slow, fragmented, and often expensive.
+            </p>
         </div>
 
-    </section>
+        <!-- Solution Side -->
+        <div class="w-100pc md-w-50pc p-5">
+            <h4 class="white fw-800 fs-l3 mb-5">How Hook Helps</h4>
+            <p class="indigo-lightest fw-600 fs-m1 opacity-50">
+                Hook brings everything into one clean, fast interface.
+                Instantly search, preview, and download icons, SVGs, videos, and photos — free for commercial and personal use.
+                No account needed. No stress. Just the assets you need.
+            </p>
+        </div>
+    </div>
+</section>
+
+
+<section class="p-10 md-p-l10 flex flex-col md-flex-row items-center gap-8">
+  <!-- Image side -->
+  <div class="w-100pc md-w-50pc" style="margin: 20px;">
+    <img src="./assets/images/pexels-thisisengineering-3862132.jpg" alt="A person multitasking on computer tabs"
+         class="w-100pc h-auto br-8 shadow-lg object-cover" />
+  </div>
+
+  <!-- Text side -->
+  <div class="w-100pc md-w-50pc">
+    <h2 class="white fs-l3 fw-900 lh-1 mb-5">Designed for Multitaskers</h2>
+    <p class="indigo-lightest fw-600 fs-m1 opacity-60">
+      Whether you're switching between design tools, researching references, or building a presentation,
+      <strong>HOOK</strong> keeps everything within reach — fast, free, and beautifully organized.
+    </p>
+  </div>
+</section>
+
+
 
     <!-- subscribe -->
     <section class="p-10 md-p-l5">
@@ -198,12 +219,10 @@
                     <button class="button bg-indigo indigo-lightest fw-300 fs-s3 br-l-0">Start</button>
                 </div>
                 <div class="flex justify-around my-8">
-                    <a href="#" class="relative p-5 bg-indigo br-round white hover-scale-up-1 ease-400"><i
+                    <a href="https://x.com/rolexthexplorer" class="relative p-5 bg-indigo br-round white hover-scale-up-1 ease-400"><i
                             data-feather="twitter" class="absolute-center h-4"></i></a>
-                    <a href="#" class="relative p-5 bg-indigo br-round white hover-scale-up-1 ease-400"><i
-                            data-feather="facebook" class="absolute-center h-4"></i></a>
-                    <a href="#" class="relative p-5 bg-indigo br-round white hover-scale-up-1 ease-400"><i
-                            data-feather="instagram" class="absolute-center h-4"></i></a>
+                    <a href="https://wa.link/86sm4z" class="relative p-5 bg-indigo br-round white hover-scale-up-1 ease-400"><i
+                            data-feather="phone" class="absolute-center h-4"></i></a>
                 </div>
             </div>
         </div>
